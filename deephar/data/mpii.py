@@ -3,7 +3,7 @@ import os
 import numpy as np
 import scipy.io as sio
 from PIL import Image
-
+from loguru import logger
 from deephar.utils import *
 
 
@@ -73,7 +73,7 @@ class MpiiSinglePerson(object):
             self.images = images
 
         except:
-            warning('Error loading the MPII dataset!')
+            logger.debug('Error loading the MPII dataset!')
             raise
 
     def load_image(self, key, mode):
@@ -83,7 +83,7 @@ class MpiiSinglePerson(object):
             imgt = T(Image.open(os.path.join(
                 self.dataset_path, 'images', image)))
         except:
-            warning('Error loading sample key/mode: %d/%d' % (key, mode))
+            logger.debug('Error loading sample key/mode: %d/%d' % (key, mode))
             raise
 
         return imgt

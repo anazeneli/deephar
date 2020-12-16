@@ -8,7 +8,7 @@ from keras.callbacks import Callback
 from deephar.measures import pckh
 from deephar.measures import pckh_per_joint
 from deephar.utils import *
-
+from loguru import logger
 
 def refine_pred(model, frames, afmat, bbox, ds, mode, outidx,
         num_iter=2,
@@ -59,13 +59,14 @@ def absulute_pred(model, frames, afmat, outidx, batch_size=8):
 
     return pred
 
-
 def eval_singleperson_pckh(model, fval, pval, afmat_val, headsize_val,
         win=None, batch_size=8, refp=0.5, map_to_pa16j=None, pred_per_block=1,
         verbose=1):
 
-    input_shape = model.get_input_shape_at(0)
+    input_shape = model.layers[0].input_shape[0] #model.get_input_shape_at(0)
+
     if len(input_shape) == 5:
+        logger.debug("VIDEO PROCESSING")
         """Video clip processing."""
         num_frames = input_shape[1]
         num_batches = int(len(fval) / num_frames)

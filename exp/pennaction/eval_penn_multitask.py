@@ -27,6 +27,9 @@ sys.path.append(os.path.join(os.getcwd(), 'datasets'))
 import annothelper
 annothelper.check_pennaction_dataset()
 
+from loguru import logger
+logger.debug("STARTING EVAL ")
+
 logdir = './'
 if len(sys.argv) > 1:
     logdir = sys.argv[1]
@@ -43,32 +46,35 @@ num_predictions = spnet.get_num_predictions(cfg.num_pyramids, cfg.num_levels)
 num_action_predictions = \
         spnet.get_num_predictions(len(cfg.action_pyramids), cfg.num_levels)
 
-
+logger.info("Loading Datasets")
 """Load datasets"""
-mpii = MpiiSinglePerson('datasets/MPII', dataconf=mpii_dataconf,
+mpii = MpiiSinglePerson(os.getcwd() + '/datasets/MPII', dataconf=mpii_dataconf,
         poselayout=pa16j2d)
+logger.info("MPII Loaded")
 
 # Check file with bounding boxes
-penn_data_path = 'datasets/PennAction'
+penn_data_path = os.getcwd() + '/datasets/PennAction'
 penn_bbox_file = 'penn_pred_bboxes_multitask.json'
+
 if os.path.isfile(os.path.join(penn_data_path, penn_bbox_file)) == False:
-    print (f'Error: file {penn_bbox_file} not found in {penn_data_path}!')
-    print (f'\nPlease download it from https://drive.google.com/file/d/1qXpEKF0d9KxmQdd2_QSIA1c3WGj1D3Y3/view?usp=sharing')
+    logger.debug(f'Error: file {penn_bbox_file} not found in {penn_data_path}!')
+    logger.debug(f'\nPlease download it from https://drive.google.com/file/d/1qXpEKF0d9KxmQdd2_QSIA1c3WGj1D3Y3/view?usp=sharing')
     sys.stdout.flush()
     sys.exit()
-
 penn_seq = PennAction(penn_data_path, pennaction_dataconf,
         poselayout=pa16j2d, topology='sequences', use_gt_bbox=False,
         pred_bboxes_file='penn_pred_bboxes_multitask.json', clip_size=num_frames)
+logger.info("PENN ACTION Loaded")
 
-
+logger.info("Build FULL MODEL")
 """Build the full model"""
 full_model = spnet.build(cfg)
 
-weights_file = 'weights/weights_mpii+penn_ar_028.hdf5'
+weights_file = os.getcwd() + '/weights/weights_mpii+penn_ar_028.hdf5'
+
 if os.path.isfile(weights_file) == False:
-    print (f'Error: file {weights_file} not found!')
-    print (f'\nPlease download it from https://drive.google.com/file/d/106yIhqNN-TrI34SX81q2xbU-NczcQj6I/view?usp=sharing')
+    logger.debug(f'Error: file {weights_file} not found!')
+    logger.debug(f'\nPlease download it from  https://drive.google.com/file/d/106yIhqNN-TrI34SX81q2xbU-NczcQj6I/view?usp=sharing')
     sys.stdout.flush()
     sys.exit()
 
@@ -81,13 +87,11 @@ recognition, so we can evaluate each part separately on its respective datasets.
 models = split_model(full_model, cfg, interlaced=False,
         model_names=['2DPose', '2DAction'])
 
-
 """Trick to pre-load validation samples from MPII."""
 mpii_val = BatchLoader(mpii, ['frame'], ['pose', 'afmat', 'headsize'],
         VALID_MODE, batch_size=mpii.get_length(VALID_MODE), shuffle=False)
-printnl('Pre-loading MPII validation data...')
+logger.debug('Pre-loading MPII validation data...')
 [x_val], [p_val, afmat_val, head_val] = mpii_val[0]
-
 
 """Define a loader for PennAction test samples. """
 penn_te = BatchLoader(penn_seq, ['frame'], ['pennaction'], TEST_MODE,
@@ -95,14 +99,16 @@ penn_te = BatchLoader(penn_seq, ['frame'], ['pennaction'], TEST_MODE,
 
 """Evaluate on 2D action recognition (PennAction)."""
 s = eval_singleclip_generator(models[1], penn_te)
-print ('Best score on PennAction (single-clip): ' + str(s))
+logger.debug('Best score on PennAction (single-clip): ')
+logger.debug(str(s))
 
 s = eval_multiclip_dataset(models[1], penn_seq,
         subsampling=pennaction_dataconf.fixed_subsampling)
-print ('Best score on PennAction (multi-clip): ' + str(s))
+logger.debug('Best score on PennAction (multi-clip): ')
+logger.debug(str(s))
 
 """Evaluate on 2D pose estimation (MPII)."""
+input_shape = models[0].layers[0].input_shape
 s = eval_singleperson_pckh(models[0], x_val, p_val[:, :, 0:2], afmat_val, head_val)
-print ('Best score on MPII: ' + str(s))
-
-
+logger.debug('Best score on MPII: ')
+logger.debug(str(s))

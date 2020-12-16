@@ -31,7 +31,7 @@ def elasticnet_bincross_loss_on_valid_joints(y_true, y_pred):
     bc = 0.01*K.binary_crossentropy(y_true, y_pred)
     dummy = 0. * y_pred
 
-    return K.sum(tf.where(K.cast(idx, 'bool'), l1 + l2 + bc, dummy),
+    return K.sum(tf.compat.v1.where(K.cast(idx, 'bool'), l1 + l2 + bc, dummy),
             axis=(-1, -2)) / num_joints
 
 

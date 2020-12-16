@@ -39,11 +39,11 @@ if len(sys.argv) > 1:
     mkdir(logdir)
     sys.stdout = open(str(logdir) + '/log.txt', 'w')
 
-weights_file = os.parh.join(logdir, 'weights_mpii_{epoch:03d}.h5')
+weights_file = os.path.join(logdir, 'weights_mpii_{epoch:03d}.h5')
 
 """Architecture configuration."""
 num_blocks = 8
-batch_size = 24
+batch_size = 8 #24
 input_shape = mpii_sp_dataconf.input_shape
 num_joints = 16
 

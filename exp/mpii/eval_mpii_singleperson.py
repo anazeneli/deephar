@@ -5,19 +5,26 @@ if os.path.realpath(os.getcwd()) != os.path.dirname(os.path.realpath(__file__)):
     sys.path.append(os.getcwd())
 
 import deephar
-
+import keras
 from keras.models import Model
 from keras.layers import concatenate
 from keras.utils.data_utils import get_file
+import tensorflow as tf
+config = tf.compat.v1.ConfigProto()
+config.gpu_options.allow_growth = True
+sess = tf.compat.v1.Session(config=config)
 
 from deephar.config import mpii_sp_dataconf
 
 from deephar.data import MpiiSinglePerson
 from deephar.data import BatchLoader
-
 from deephar.models import reception
 from deephar.utils import *
+from loguru import logger
 
+weights_file = 'weights_PE_MPII_cvpr18_19-09-2017.h5'
+#weights_path = os.getcwd() + '/' + weights_file
+#logger.debug(weights_path)
 sys.path.append(os.path.join(os.getcwd(), 'exp/common'))
 from mpii_tools import eval_singleperson_pckh
 
@@ -26,10 +33,10 @@ import annothelper
 
 annothelper.check_mpii_dataset()
 
-weights_file = 'weights_PE_MPII_cvpr18_19-09-2017.h5'
 TF_WEIGHTS_PATH = \
-        'https://github.com/dluvizon/deephar/releases/download/v0.1/' \
-        + weights_file
+       'https://github.com/dluvizon/deephar/releases/download/v0.1/' \
+       + weights_file
+
 md5_hash = 'd6b85ba4b8a3fc9d05c8ad73f763d999'
 
 logdir = './'
@@ -44,13 +51,14 @@ batch_size = 24
 input_shape = mpii_sp_dataconf.input_shape
 num_joints = 16
 
+# Build the model
 model = reception.build(input_shape, num_joints, dim=2,
         num_blocks=num_blocks, num_context_per_joint=2, ksize=(5, 5),
         concat_pose_confidence=False)
 
+weights_path = get_file(weights_file, TF_WEIGHTS_PATH, file_hash=md5_hash, cache_subdir='models')
+
 """Load pre-trained model."""
-weights_path = get_file(weights_file, TF_WEIGHTS_PATH, md5_hash=md5_hash,
-        cache_subdir='models')
 model.load_weights(weights_path)
 
 """Merge pose and visibility as a single output."""
@@ -60,8 +68,10 @@ for b in range(int(len(model.outputs) / 2)):
         name='blk%d' % (b + 1)))
 model = Model(model.input, outputs, name=model.name)
 
+
 """Load the MPII dataset."""
 mpii = MpiiSinglePerson('datasets/MPII', dataconf=mpii_sp_dataconf)
+
 
 """Pre-load validation samples and generate the eval. callback."""
 mpii_val = BatchLoader(mpii, x_dictkeys=['frame'],
@@ -71,5 +81,7 @@ mpii_val = BatchLoader(mpii, x_dictkeys=['frame'],
 printcn(OKBLUE, 'Pre-loading MPII validation data...')
 [x_val], [p_val, afmat_val, head_val] = mpii_val[0]
 
-eval_singleperson_pckh(model, x_val, p_val[:,:,0:2], afmat_val, head_val)
+scores = eval_singleperson_pckh(model, x_val, p_val[:,:,0:2], afmat_val, head_val)
+logger.info("SCORES ")
+logger.debug(scores)
 
