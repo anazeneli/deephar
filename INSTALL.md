@@ -5,7 +5,11 @@ datasets.
 
 ## Limitations
 
-Note that python3 is **required** and is used unless specified.
+Note that python3.6 is **required** and is used unless specified.
+
+Built on Ubuntu 18.04 but not required. 
+
+**Required** Cuda 10.0, cuDNN 7.6.5 (any version higher than 7.6.4 will work)
 
 On Keras and on TensorFlow, only data format 'channels_last' is supported.
 
