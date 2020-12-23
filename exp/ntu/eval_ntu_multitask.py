@@ -1,5 +1,6 @@
 import os
 import sys
+from loguru import logger
 
 if os.path.realpath(os.getcwd()) != os.path.dirname(os.path.realpath(__file__)):
     sys.path.append(os.getcwd())
@@ -37,27 +38,31 @@ cfg = ModelConfig((num_frames,) + ntu_dataconf.input_shape, pa17j3d,
         num_levels=4, pose_replica=False,
         num_pose_features=192, num_visual_features=192)
 
+logger.debug(cfg)
 num_predictions = spnet.get_num_predictions(cfg.num_pyramids, cfg.num_levels)
 num_action_predictions = spnet.get_num_predictions(len(cfg.action_pyramids), cfg.num_levels)
+logger.debug("NUM PREDICTIONS")
+logger.debug(num_action_predictions)
 
 """Load datasets"""
 # h36m = Human36M(datasetpath('Human3.6M'), dataconf=human36m_dataconf,
         # poselayout=pa17j3d, topology='frames')
 
-ntu_data_path = 'datasets/NTU'
+ntu_data_path = os.getcwd() + '/datasets/NTU'
+logger.debug(ntu_data_path)
 
 ntu = Ntu(ntu_data_path, ntu_dataconf, poselayout=pa17j3d,
-        topology='sequences', use_gt_bbox=True, clip_size=num_frames) #, num_S=1)
-#print ('WARNING!! USING ONLY S1 FOR EVALUATION!')
+        topology='sequences', use_gt_bbox=True, clip_size=num_frames, num_S=5)
+#logger.debug ('WARNING!! USING ONLY S1 FOR EVALUATION!')
 
 """Build the full model"""
 full_model = spnet.build(cfg)
 
-weights_file = 'output/ntu_spnet_trial-03-ft_replica_0ae2bf7/weights_3dp+ntu_ar_062.hdf5'
-
+weights_file = os.getcwd() + '/weights/weights_3dp+ntu_ar_062.hdf5'
+logger.debug(weights_file)
 if os.path.isfile(weights_file) == False:
-    print (f'Error: file {weights_file} not found!')
-    print (f'\nPlease download it from  https://drive.google.com/file/d/1I6GftXEkL5nohLA60Vi6faW0rvTZg6Kx/view?usp=sharing')
+    logger.debug (f'Error: file {weights_file} not found!')
+    logger.debug (f'\nPlease download it from  https://drive.google.com/file/d/1I6GftXEkL5nohLA60Vi6faW0rvTZg6Kx/view?usp=sharing')
     sys.stdout.flush()
     sys.exit()
 
@@ -80,8 +85,9 @@ models = split_model(full_model, cfg, interlaced=False,
         # h36m_action] = h36m_val[0]
 
 """NTU subset of testing samples"""
-ntu_te = BatchLoader(ntu, ['frame'], ['ntuaction'], TEST_MODE, batch_size=1,
-        shuffle=False)
+#ntu_te = BatchLoader(ntu, ['frame'], ['ntuaction'], TEST_MODE, batch_size=1,
+#        shuffle=False)
+
 
 """Evaluate on Human3.6M using 3D poses."""
 # s = eval_human36m_sc_error(models[0], h36m_x_val, h36m_pw_val, h36m_afmat_val,
@@ -89,3 +95,6 @@ ntu_te = BatchLoader(ntu, ['frame'], ['ntuaction'], TEST_MODE, batch_size=1,
 
 s = eval_multiclip_dataset(models[1], ntu,
         subsampling=ntu_dataconf.fixed_subsampling, logdir=logdir)
+
+logger.debug("NTU Result Scores ")
+logger.debug(s)

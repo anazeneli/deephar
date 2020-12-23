@@ -8,7 +8,7 @@ from keras.callbacks import Callback
 
 from deephar.data import BatchLoader
 from deephar.utils import *
-
+from loguru import logger
 
 def eval_singleclip_gt_bbox(model, x_te, action_te, batch_size=1, verbose=1):
 
@@ -119,6 +119,7 @@ def eval_multiclip_dataset(model, penn, subsampling, bboxes_file=None,
 
                     """Load clip and predict action."""
                     data = penn.get_data(i, TEST_MODE, frame_list=frame_list[f])
+
                     a_true[i, :] = data['pennaction']
 
                     pred = model.predict(np.expand_dims(data['frame'], axis=0))
@@ -145,6 +146,7 @@ def eval_multiclip_dataset(model, penn, subsampling, bboxes_file=None,
     if logdir is not None:
         np.save('%s/allpred.npy' % logdir, allpred)
         np.save('%s/a_true.npy' % logdir, a_true)
+        logger.debug("NUMPY PREDICTION FILES WRITTEN")
         with open(os.path.join(logdir, 'missing-clips.json'), 'w') as fid:
             json.dump(missing_clips, fid)
 

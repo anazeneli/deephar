@@ -89,9 +89,9 @@ def draw(x=None,
         facecolor='white',
         azimuth=65,
         dpi=100,
-        filename=None):
+        filename=None, predicted=False):
 
-    # Configure the ploting environment
+    # Configure the plotting environment
     if plt is None:
         printcn(WARNING, 'pyplot not defined!')
         return
@@ -130,11 +130,11 @@ def draw(x=None,
     if skels is not None:
         if isinstance(skels, list) or len(skels.shape) == 3:
             for s in skels:
-                plot_skeleton_2d(ax[0], s, h=h, w=w)
+                plot_skeleton_2d(ax[0], s, h=h, w=w, predicted=predicted)
             if plot3d:
                 plot_3d_pose(s, subplot=ax[-1], azimuth=azimuth)
         else:
-            plot_skeleton_2d(ax[0], skels, h=h, w=w)
+            plot_skeleton_2d(ax[0], skels, h=h, w=w, predicted=predicted)
             if plot3d:
                 plot_3d_pose(skels, subplot=ax[-1], azimuth=azimuth)
 
@@ -160,9 +160,14 @@ def draw(x=None,
         plt.close(fig[i])
 
 
-def _get_poselayout(num_joints):
+def _get_poselayout(num_joints, predicted=False):
     if num_joints == 16:
-        return pa16j2d.color, pa16j2d.cmap, pa16j2d.links
+        if predicted:
+            predicted_links = [[14,12],[12,10],[10,11],[13,0],[0,2],[15,1],[1,3],[8,4],[4,7],[6,5],[5,9]]
+            cmap_pred = [1, 2, 1, 2, 3, 4, 4, 3, 3, 4, 0, 0, 0, 1, 0, 2]
+            return pa16j2d.color, cmap_pred, predicted_links
+        else:
+            return pa16j2d.color, pa16j2d.cmap, pa16j2d.links
     elif num_joints == 17:
         return pa17j3d.color, pa17j3d.cmap, pa17j3d.links
     elif num_joints == 20:
@@ -253,14 +258,14 @@ def _plot_bbox(subplot, bbox, h=None, w=None, scale=16, lw=2, c=None):
 
 
 def plot_skeleton_2d(subplot, skel, h=None, w=None,
-        joints=True, links=True, scale=16, lw=4):
+        joints=True, links=True, scale=16, lw=4, predicted=False):
 
     s = skel.copy()
     num_joints = len(s)
     assert ((num_joints == 16) or (num_joints == 17)) or (num_joints == 20), \
             'Unsupported number of joints (%d)' % num_joints
 
-    color, cmap, links = _get_poselayout(num_joints)
+    color, cmap, links = _get_poselayout(num_joints,predicted=predicted)
 
     x = s[:,0]
     y = s[:,1]

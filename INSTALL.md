@@ -53,13 +53,17 @@ Video frames from PennAction should be manually downloaded and extracted
 in `datasets/PennAction/frames`. The pose annotations and predicted bounding
 boxes will be automatically downloaded by this software.
 
-### NTU
+### NTU0
 
 The **NTU RGB+D** dataset is available in this [ [link](http://rose1.ntu.edu.sg/datasets/actionrecognition.asp) ].
 
-Video frames from NTU should be also manually extracted.
+Install RGB Videos and manually extract the video frames.
 A Python [script](datasets/NTU/extract-resize-videos.py) is provided to help in
 this task. Python 2 is required.
+Run the script as follows: 
+python2 extract-resize-vide.py [subject_number] 
+* the subject number is identified as the first 4 characters of the file 
+* ex) *S002C002P009R001A016_rgb.avi would be subject 2 (S002)
 
 Additional pose annotation is provided for NTU, which is used to train the pose
 estimation part for this dataset. It is different from the original Kinect

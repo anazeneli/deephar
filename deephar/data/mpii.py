@@ -99,12 +99,11 @@ class MpiiSinglePerson(object):
         imgt = self.load_image(key, mode)
         annot = self.samples[mode][key]
 
-        scale = 1.25*annot['scale']
+        scale = 1.25 * annot['scale']
         objpos = np.array([annot['objpos'][0], annot['objpos'][1] + 12*scale])
         objpos += scale * np.array([dconf['transx'], dconf['transy']])
         winsize = 200 * dconf['scale'] * scale
         winsize = (winsize, winsize)
-        output['bbox'] = objposwin_to_bbox(objpos, winsize)
 
         if fast_crop:
             """Slightly faster method, but gives lower precision."""

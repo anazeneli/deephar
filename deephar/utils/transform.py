@@ -145,7 +145,7 @@ def transform_2d_points(A, x, transpose=False, inverse=False):
     # Return
         The transformed points.
     """
-
+    from loguru import logger
     squeeze = False
     if len(x.shape) == 1:
         x = np.expand_dims(x, axis=-1)
@@ -168,6 +168,7 @@ def transform_2d_points(A, x, transpose=False, inverse=False):
         return np.squeeze(y)
     if transpose:
         return np.transpose(y)
+
     return y
 
 

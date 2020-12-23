@@ -8,7 +8,7 @@ import queue
 import threading
 
 from keras.utils import Sequence
-
+from loguru import logger
 from deephar.utils import *
 
 class BatchLoader(Sequence):
@@ -23,7 +23,7 @@ class BatchLoader(Sequence):
     # Arguments
         dataset: A dataset object, or a list of dataset objects (for multiple
             datasets), which are merged by this class.
-        x_dictkeys: Key names (strings) to constitute the baches of X data
+        x_dictkeys: Key names (strings) to constitute the batches of X data
             (input).
         y_dictkeys: Identical to x_dictkeys, but for Y data (labels).
             All given datasets must provide those keys.
@@ -132,7 +132,7 @@ class BatchLoader(Sequence):
         return sum(self.batch_sizes)
 
     def get_data(self, idx, mode):
-        """Get the required data by mergning all the datasets as specified
+        """Get the required data by merging all the datasets as specified
         by the object's parameters."""
         data_dict = {}
         for dkey in self.allkeys:
@@ -159,7 +159,6 @@ class BatchLoader(Sequence):
                     data_dict[dkey][batch_cnt, :] = data[dkey]
 
                 batch_cnt += 1
-
         return data_dict
 
     def get_shape(self, dictkey):

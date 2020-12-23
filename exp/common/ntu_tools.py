@@ -8,6 +8,7 @@ from keras.callbacks import Callback
 
 from deephar.data import BatchLoader
 from deephar.utils import *
+from loguru import logger
 
 
 def eval_singleclip_gt_bbox_generator(model, datagen, verbose=1):
@@ -18,7 +19,7 @@ def eval_singleclip_gt_bbox_generator(model, datagen, verbose=1):
     start = time.time()
     for i in range(num_samples):
         if verbose > 1:
-            printcn('', 'pred %05d/%05d' % (i+1, num_samples))
+            logger.debug('', 'pred %05d/%05d' % (i+1, num_samples))
 
         [x], [y] = datagen[i]
         if 'y_true' not in locals():
@@ -44,7 +45,7 @@ def eval_singleclip_gt_bbox_generator(model, datagen, verbose=1):
             printc(WARNING, ' %.1f ' % (100*scores[-1]))
 
     if verbose:
-        printcn('', '\n%d samples in %.1f sec: %.1f clips per sec' \
+        logger.debug('', '\n%d samples in %.1f sec: %.1f clips per sec' \
                 % (num_samples, dt, num_samples / dt))
 
     return scores
@@ -52,7 +53,7 @@ def eval_singleclip_gt_bbox_generator(model, datagen, verbose=1):
 
 def eval_multiclip_dataset(model, ntu, subsampling, bboxes_file=None,
         logdir=None, verbose=1):
-    """If bboxes_file if not given, use ground truth bounding boxes."""
+    """If bboxes_file is not given, use ground truth bounding boxes."""
 
     num_samples = ntu.get_length(TEST_MODE)
     num_blocks = len(model.outputs)
@@ -85,7 +86,7 @@ def eval_multiclip_dataset(model, ntu, subsampling, bboxes_file=None,
 
         frame_list = ntu.get_clip_index(i, TEST_MODE, subsamples=[subsampling])
 
-        """Variable to hold all preditions for this sequence.
+        """Variable to hold all predictions for this sequence.
         2x frame_list due to hflip.
         """
         allpred = np.ones((num_blocks, 2*len(frame_list)) + action_shape[1:])
@@ -110,6 +111,7 @@ def eval_multiclip_dataset(model, ntu, subsampling, bboxes_file=None,
                     a_true[i, :] = data['ntuaction']
 
                     pred = model.predict(np.expand_dims(data['frame'], axis=0))
+
                     for b in range(num_blocks):
                         allpred[b, 2*f+hflip, :] = pred[b][0]
                         a_pred[b, i, :] *= pred[b][0]
@@ -141,9 +143,9 @@ def eval_multiclip_dataset(model, ntu, subsampling, bboxes_file=None,
     correct = np.argmax(a_true, axis=-1) == np.argmax(a_pred, axis=-1)
     scores = 100*np.sum(correct, axis=-1) / num_samples
     if verbose:
-        printcn(WARNING, 'NTU, multi-clip. ' + bboxes_info + '\n')
-        printcn(WARNING, np.array2string(np.array(scores), precision=2))
-        printcn(WARNING, 'NTU best: %.2f' % max(scores))
+        logger.warning('NTU, multi-clip. ' + bboxes_info + '\n')
+        logger.warning(np.array2string(np.array(scores), precision=2))
+        logger.warning('NTU best: %.2f' % max(scores))
 
     ntu.dataconf.fixed_hflip = org_hflip
     ntu.use_gt_bbox = org_use_gt_bbox
@@ -183,8 +185,8 @@ class NtuEvalCallback(Callback):
         cur_best = max(scores)
         self.scores[epoch] = cur_best
 
-        printcn(OKBLUE, 'Best score is %.1f at epoch %d' % \
-                (100*self.best_score, self.best_epoch))
+        logger.debug(OKBLUE)
+        logger.debug('Best score is %.1f at epoch %d' % (100*self.best_score, self.best_epoch))
 
     @property
     def best_epoch(self):

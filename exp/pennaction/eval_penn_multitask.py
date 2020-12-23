@@ -98,17 +98,16 @@ penn_te = BatchLoader(penn_seq, ['frame'], ['pennaction'], TEST_MODE,
         batch_size=1, shuffle=False)
 
 """Evaluate on 2D action recognition (PennAction)."""
-s = eval_singleclip_generator(models[1], penn_te)
+s = eval_singleclip_generator(models[1], penn_te, logdir=logdir)
 logger.debug('Best score on PennAction (single-clip): ')
 logger.debug(str(s))
 
 s = eval_multiclip_dataset(models[1], penn_seq,
-        subsampling=pennaction_dataconf.fixed_subsampling)
+        subsampling=pennaction_dataconf.fixed_subsampling, logdir=logdir)
 logger.debug('Best score on PennAction (multi-clip): ')
 logger.debug(str(s))
 
 """Evaluate on 2D pose estimation (MPII)."""
-input_shape = models[0].layers[0].input_shape
 s = eval_singleperson_pckh(models[0], x_val, p_val[:, :, 0:2], afmat_val, head_val)
 logger.debug('Best score on MPII: ')
 logger.debug(str(s))

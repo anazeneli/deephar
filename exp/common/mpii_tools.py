@@ -20,7 +20,6 @@ def refine_pred(model, frames, afmat, bbox, ds, mode, outidx,
     refined_bbox = []
 
     for t in range(num_iter):
-
         ds.set_custom_bboxes(mode, refined_bbox)
         pred = model.predict(frames, batch_size=batch_size, verbose=1)[outidx]
 
@@ -30,6 +29,7 @@ def refine_pred(model, frames, afmat, bbox, ds, mode, outidx,
             refined_bbox = curr_bbox.copy()
 
         pred = transform_pose_sequence(A.copy(), pred, inverse=True)
+
         pred_out.append(pred)
         if t == num_iter - 1:
             break
@@ -59,6 +59,9 @@ def absulute_pred(model, frames, afmat, outidx, batch_size=8):
 
     return pred
 
+# fval is images to predict on
+# pval is the ground truth poses
+# afmat is the ground truth annotations
 def eval_singleperson_pckh(model, fval, pval, afmat_val, headsize_val,
         win=None, batch_size=8, refp=0.5, map_to_pa16j=None, pred_per_block=1,
         verbose=1):
@@ -85,6 +88,7 @@ def eval_singleperson_pckh(model, fval, pval, afmat_val, headsize_val,
         inputs.append(win)
 
     pred = model.predict(inputs, batch_size=batch_size, verbose=1)
+
     if win is not None:
         del pred[0]
 
@@ -92,6 +96,7 @@ def eval_singleperson_pckh(model, fval, pval, afmat_val, headsize_val,
     y_true = pval[:]
 
     y_true = transform_pose_sequence(A.copy(), y_true, inverse=True)
+
     if map_to_pa16j is not None:
         y_true = y_true[:, map_to_pa16j, :]
     scores = []
@@ -115,10 +120,12 @@ def eval_singleperson_pckh(model, fval, pval, afmat_val, headsize_val,
         if map_to_pa16j is not None:
             y_pred = y_pred[:, map_to_pa16j, :]
 
+        logger.debug("YPRED ", y_pred)
         y_pred = transform_pose_sequence(A.copy(), y_pred, inverse=True)
+        logger.debug(y_pred)
         s = pckh(y_true, y_pred, headsize_val, refp=refp)
         if verbose:
-            printc(WARNING, ' %.1f' % (100*s))
+            logger.warning(' %.1f' % (100*s))
         scores.append(s)
 
         if b == num_blocks-1:
@@ -127,7 +134,7 @@ def eval_singleperson_pckh(model, fval, pval, afmat_val, headsize_val,
             pckh_per_joint(y_true, y_pred, headsize_val, pa16j2d,
                     verbose=verbose)
 
-    return scores
+    return scores, y_pred
 
 
 class MpiiEvalCallback(Callback):

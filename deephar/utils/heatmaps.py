@@ -6,7 +6,7 @@ from .pose import get_visible_joints
 class HeatMaps2D():
     def __init__(self, poses, numbins, variance=0.3):
         assert (poses.shape[-1] == 2) or ((poses.shape[-1] == 3)), \
-                'Poses are expected to by 2D or 3D!'
+                'Poses are expected to be 2D or 3D!'
         self.poses = poses
         if len(poses.shape) == 4:
             self.num_frames = poses.shape[1]
