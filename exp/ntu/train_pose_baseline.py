@@ -5,7 +5,7 @@ if os.path.realpath(os.getcwd()) != os.path.dirname(os.path.realpath(__file__)):
     sys.path.append(os.getcwd())
 
 import deephar
-
+from loguru import logger
 from deephar.config import mpii_dataconf
 from deephar.config import human36m_dataconf
 from deephar.config import pennaction_dataconf
@@ -30,10 +30,15 @@ from deephar.trainer import TrainerOnGenerator
 from deephar.utils import *
 
 sys.path.append(os.path.join(os.getcwd(), 'exp/common'))
-from datasetpath import datasetpath
+# from datasetpath import datasetpath
 from mpii_tools import MpiiEvalCallback
-from h36m_tools import H36MEvalCallback
+# from h36m_tools import H36MEvalCallback
 
+def datasetpath(dataset):
+    if dataset == "Penn_Action":
+        dataset = "PennAction"
+
+    return os.getcwd() + "/datasets/" + dataset
 
 logdir = './'
 if len(sys.argv) > 1:
@@ -56,8 +61,8 @@ batch_size_ar = 2
 mpii = MpiiSinglePerson(datasetpath('MPII'), dataconf=mpii_dataconf,
         poselayout=pa17j3d)
 
-h36m = Human36M(datasetpath('Human3.6M'), dataconf=human36m_dataconf,
-        poselayout=pa17j3d, topology='frames')
+# h36m = Human36M(datasetpath('Human3.6M'), dataconf=human36m_dataconf,
+#         poselayout=pa17j3d, topology='frames')f
 
 penn_sf = PennAction(datasetpath('Penn_Action'), pennaction_dataconf,
         poselayout=pa17j3d, topology='frames', use_gt_bbox=True)
@@ -66,8 +71,8 @@ ntu_sf = Ntu(datasetpath('NTU'), ntu_pe_dataconf, poselayout=pa17j3d,
         topology='frames', use_gt_bbox=True)
 
 """Create an object to load data from all datasets."""
-data_tr = BatchLoader([mpii, h36m, penn_sf, ntu_sf], ['frame'], ['pose'],
-        TRAIN_MODE, batch_size=[batch_size_mpii, batch_size_mpii, batch_size_ar,
+data_tr = BatchLoader([mpii, penn_sf, ntu_sf], ['frame'], ['pose'],
+        TRAIN_MODE, batch_size=[batch_size_mpii, batch_size_ar,
             batch_size_ar], num_predictions=num_predictions, shuffle=True)
 
 """MPII validation samples."""
@@ -78,16 +83,15 @@ printcn(OKBLUE, 'Pre-loading MPII validation data...')
 mpii_callback = MpiiEvalCallback(x_val, p_val, afmat_val, head_val,
         map_to_pa16j=pa17j3d.map_to_pa16j, logdir=logdir)
 
-"""Human3.6H validation samples."""
-h36m_val = BatchLoader(h36m, ['frame'],
-        ['pose_w', 'pose_uvd', 'afmat', 'camera', 'action'], VALID_MODE,
-        batch_size=h36m.get_length(VALID_MODE), shuffle=True)
-printcn(OKBLUE, 'Preloading Human3.6M validation samples...')
-[x_val], [pw_val, puvd_val, afmat_val, scam_val, action] = h36m_val[0]
-
-h36m_callback = H36MEvalCallback(x_val, pw_val, afmat_val,
-        puvd_val[:,0,2], scam_val, action, logdir=logdir)
-
+# """Human3.6H validation samples."""
+# h36m_val = BatchLoader(h36m, ['frame'],
+#         ['pose_w', 'pose_uvd', 'afmat', 'camera', 'action'], VALID_MODE,
+#         batch_size=h36m.get_length(VALID_MODE), shuffle=True)
+# printcn(OKBLUE, 'Preloading Human3.6M validation samples...')
+# [x_val], [pw_val, puvd_val, afmat_val, scam_val, action] = h36m_val[0]
+#
+# h36m_callback = H36MEvalCallback(x_val, pw_val, afmat_val,
+#         puvd_val[:,0,2], scam_val, action, logdir=logdir)
 
 model = spnet.build(cfg)
 
@@ -98,7 +102,7 @@ model.summary()
 callbacks = []
 callbacks.append(SaveModel(weights_path))
 callbacks.append(mpii_callback)
-callbacks.append(h36m_callback)
+# callbacks.append(h36m_callback)
 
 steps_per_epoch = mpii.get_length(TRAIN_MODE) // batch_size_mpii
 

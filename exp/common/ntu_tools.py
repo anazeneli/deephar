@@ -50,7 +50,6 @@ def eval_singleclip_gt_bbox_generator(model, datagen, verbose=1):
 
     return scores
 
-
 def eval_multiclip_dataset(model, ntu, subsampling, bboxes_file=None,
         logdir=None, verbose=1):
     """If bboxes_file is not given, use ground truth bounding boxes."""
